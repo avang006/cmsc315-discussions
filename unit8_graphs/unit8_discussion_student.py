@@ -31,42 +31,43 @@ def bfs(graph, start):
     - Why neighbors are added to the queue.
     - How BFS differs from depth-first traversal.
     """
-    # 1. Edge Case: If the start node is completely missing from the graph definition, 
-    # handle it safely by returning an empty list to avoid throwing a KeyError.
+    # 1. Edge Case: If the selected starting seat is missing from our seating chart configuration,
+    # handle it safely by returning an empty list to prevent throwing a system KeyError.
     if start not in graph:
         return []
 
-    # 2. Initialization: Set up the track paths.
-    visited_order = []          # Keeps track of the exact sequence nodes are fully processed
-    visited_set = set()         # Tracks unique visited keys for O(1) membership lookups
+    # 2. Initialization: Set up the search pathways.
+    visited_order = []          # Order in which seats are evaluated for distance proximity
+    visited_set = set()         # Tracks unique seats checked to prevent geometric backtracking
     
     # Why a queue is used: 
-    # A queue follows First-In, First-Out (FIFO) behavior. This guarantees that elements 
-    # entered into the system first (closer layers) are dequeued and processed before elements 
-    # discovered later (deeper layers). This naturally enforces a uniform, radial expansion.
+    # A queue follows First-In, First-Out (FIFO) mechanics. This guarantees that seats 
+    # immediately bordering the ideal seat (1 step away) are checked completely before the system 
+    # moves to seats farther away (2 or more steps away). This ensures proximity-first searching.
     queue = deque([start])
     visited_set.add(start)
 
     while queue:
-        # Pull the next person out from the front of the queue to process them
+        # Pull the next closest seat out from the front of the queue to check its neighborhood
         current_node = queue.popleft()
         visited_order.append(current_node)
 
-        # Look at every direct connection (neighbor) of the current person
-        for neighbor in graph[current_node]:
+        # Look at every adjacent seat (up, down, left, right neighbors) of the current seat.
+        # FIX: Using graph.get() protects the function from crashing if a neighbor node is omitted from the main keys.
+        for neighbor in graph.get(current_node, []):
             # Why neighbors are added to the queue:
-            # We append unvisited neighbors to the back of the queue. Because of FIFO ordering, 
-            # all current-tier neighbors will finish processing before *their* respective 
-            # downstream neighbors are ever touched. This builds our level-by-level ripple effect.
+            # We append unvisited neighboring seats to the back of the queue. Because of FIFO processing, 
+            # all seats within a closer tier radius are handled before we drift deeper into the theater, 
+            # building an expanding visual ring of alternative choices.
             if neighbor not in visited_set:
                 visited_set.add(neighbor)
                 queue.append(neighbor)
 
     # How BFS differs from Depth-First Traversal (DFS):
-    # BFS explores the graph horizontally layer by layer using a FIFO Queue, making it ideal for 
-    # finding the absolute shortest path to an element. Conversely, DFS uses a LIFO Stack to plunge 
-    # as deep as possible down a single structural branch before backtracking, prioritizing path 
-    # exhaustion over structural proximity.
+    # BFS explores the seating arrangement organically in expanding concentric circles, making it perfect 
+    # for finding seats with the absolute minimum distance from the target choice. DFS would instead plunge 
+    # all the way down a single row to the side wall or back of the auditorium before checking seats sitting 
+    # directly next to the user's initial selection.
     return visited_order
 
 
@@ -78,80 +79,77 @@ def main():
     # ===============================
     print("\n=== GRAPH STRUCTURE ===")
     
-    # Real-World Scenario: A professional social network (like LinkedIn).
-    # Nodes represent individuals.
-    # Edges represent mutual 1st-degree professional connections.
+    # Real-World Scenario: Movie Theater Booking System Seat Proximity Optimization.
+    # Nodes represent physical seats in a coordinate cluster.
+    # Edges represent immediate physical proximity links (directly adjacent spaces).
     
-    # 1. & 2. & 3. Create graph with 6 initial nodes and multiple cross-connections.
-    social_graph = {
-        "Alice": ["Bob", "Charlie"],
-        "Bob": ["Alice", "David", "Eve"],
-        "Charlie": ["Alice", "Eve"],
-        "David": ["Bob", "Frank"],
-        "Eve": ["Bob", "Charlie", "Frank"],
-        "Frank": ["David", "Eve"]
+    # 1. & 2. & 3. Create a layout with all necessary nodes mapped cleanly to prevent lookup exceptions.
+    seating_map = {
+        "C3": ["C2", "C4", "B3"],
+        "C2": ["C3", "D2"],
+        "C4": ["C3", "D4"],
+        "B3": ["C3", "B2", "B4"],
+        "B2": ["B3"],
+        "B4": ["B3"],
+        "D2": ["C2"],  # FIX: Added entry node so graph["D2"] lookup functions safely
+        "D4": ["C4"]   # FIX: Added entry node so graph["D4"] lookup functions safely
     }
 
     # 4. Display the graph structure cleanly
-    print("Professional Network Layout (Adjacency List):")
-    for person, connections in social_graph.items():
-        print(f"  {person} is connected to --> {connections}")
+    print("Auditorium Seating Grid Cluster (Adjacency List):")
+    for seat, adjacencies in seating_map.items():
+        print(f"  Seat [{seat}] touches adjacent spaces --> {adjacencies}")
         
-    print("\nExplanation: Nodes represent people; the adjacency arrays show direct 1st-degree links.")
+    print("\nExplanation: Nodes are seats; adjacency arrays track physically bordering seating positions.")
 
     # ===============================
     # BFS TRAVERSAL
     # ===============================
     print("\n=== BFS TRAVERSAL ===")
     
-    # 1. & 2. & 3. Select start node and execute BFS.
-    start_person = "Alice"
-    initial_traversal = bfs(social_graph, start_person)
-    print(f"BFS Exploration Order starting from {start_person}:")
-    print(f"  {initial_traversal}")
+    # 1. & 2. & 3. Select preferred focal seat and execute nearby proximity sweep.
+    ideal_seat = "C3"
+    proximity_sweep = bfs(seating_map, ideal_seat)
+    print(f"BFS Alternative Recommendation Priority starting from preferred seat [{ideal_seat}]:")
+    print(f"  {proximity_sweep}")
     
     # 4. Explain how BFS visits nodes level by level
-    # Level 0: Alice (Starting node)
-    # Level 1 (Direct connections): Bob, Charlie
-    # Level 2 (Friends-of-friends): David, Eve
-    # Level 3 (3rd-degree links): Frank
-    print("\nExplanation of Levels:")
-    print("  - Level 0 (Origin): Alice")
-    print("  - Level 1 (1st Degree): Bob and Charlie are visited first.")
-    print("  - Level 2 (2nd Degree): David and Eve are pulled in via Bob and Charlie.")
-    print("  - Level 3 (3rd Degree): Frank is reached last through David and Eve.")
+    print("\nExplanation of Distance Tiers (Proximity Steps):")
+    print("  - Tier 0 (Perfect Match): C3")
+    print("  - Tier 1 (Immediate Neighbors): C2, C4, and B3 are evaluated next as primary backups.")
+    print("  - Tier 2 (Secondary Backups): D2, D4, B2, and B4 are swept outward on the next loop layer.")
 
-    # 5. Add an additional node/edge and demonstrate updating the network layout dynamically.
-    print("\n--- Updating Network: Adding 'Grace' connected to 'Frank' ---")
-    social_graph["Frank"].append("Grace")
-    social_graph["Grace"] = ["Frank"]  # Bidirectional edge declaration
+    # 5. Add an additional node/edge and demonstrate updating the grid layout dynamically.
+    print("\n--- Updating Chart: Installing a new VIP Companion seat 'B5' linked via 'B4' ---")
+    seating_map["B4"].append("B5")
+    seating_map["B5"] = ["B4"]  # Creating a bidirectional physical link
     
-    updated_traversal = bfs(social_graph, start_person)
-    print(f"Updated BFS Order after Grace joins network:")
-    print(f"  {updated_traversal}")
-    print("Notice how Grace automatically surfaces at the absolute end, mapping accurately as a 4th-degree link.")
+    updated_sweep = bfs(seating_map, ideal_seat)
+    print(f"Updated Backup Seating Scan after provisioning Seat B5:")
+    print(f"  {updated_sweep}")
+    print("Notice how B5 correctly drops into the final position, mapping as a Tier 3 priority backup.")
 
     # ===============================
     # EDGE CASES
     # ===============================
     print("\n=== EDGE CASE TESTS ===")
     
-    # Edge Case 1: Safe handling of a completely missing search key request
-    missing_target = "Zane"
-    print(f"1. Attempting BFS with a missing start node '{missing_target}':")
-    missing_result = bfs(social_graph, missing_target)
-    print(f"   Result list: {missing_result}")
-    print("   -> Explanation: Safe guard intercept prevents 'KeyError' exceptions by verifying lookup bounds first.")
+    # Edge Case 1: Safe handling of a booking request for a non-existent seat label
+    invalid_seat = "Z99"
+    print(f"1. Querying alternative recommendations for invalid seat code '{invalid_seat}':")
+    missing_result = bfs(seating_map, invalid_seat)
+    print(f"   Returned allocation recommendations: {missing_result}")
+    print("   -> Explanation: System lookup boundaries confirm seat presence first, preventing crashes.")
 
-    # Edge Case 2: Executing BFS across a completely disconnected sub-network (Island Isolation)
-    print("\n2. Simulating a disconnected network entry ('Ian' and 'Jill' are stranded on their own island):")
-    social_graph["Ian"] = ["Jill"]
-    social_graph["Jill"] = ["Ian"]
+    # Edge Case 2: Executing BFS across an isolated sub-graph (Air-Gapped Private VIP Box Balcony)
+    print("\n2. Simulating an isolated VIP box configuration ('Box-A1' and 'Box-A2' share an isolated lounge):")
+    seating_map["Box-A1"] = ["Box-A2"]
+    seating_map["Box-A2"] = ["Box-A1"]
     
-    isolated_result = bfs(social_graph, "Ian")
-    print(f"   BFS tracking starting from isolated user 'Ian': {isolated_result}")
-    print("   -> Explanation: BFS processes the isolated island entirely but will never cross over to Alice's")
-    print("      component because there are no edge pathways connecting the two sub-graphs together.")
+    isolated_result = bfs(seating_map, "Box-A1")
+    print(f"   Recommendation loop initialized for isolated ticket zone 'Box-A1': {isolated_result}")
+    print("   -> Explanation: BFS identifies the adjacent VIP seat but will never cross over to main rows")
+    print("      because no geometric aisles or physical pathways bridge the balcony box to the lower level.")
 
 
 if __name__ == "__main__":
